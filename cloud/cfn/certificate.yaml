@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Provision IoT certificate.
+
+Resources:
+  TrashBinS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      NotificationConfiguration:
+        EventBridgeConfiguration:
+          EventBridgeEnabled: true
+
+  IoTCertificateRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: lambda.amazonaws.com
+
+  IoTCertificatePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: !Sub Allows the IoTRoleAliasFunction to create alias. Stack ${AWS::StackName}
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Resource: "*"
+            Action:
+              - iot:CreateKeysAndCertificate
+          - Effect: Allow
+            Resource: !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:cert/*
+            Action:
+              - iot:UpdateCertificate
+          - Effect: Allow
+            Resource: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:*
+            Action:
+              - secretsmanager:DescribeSecret
+              - secretsmanager:GetSecretValue
+              - secretsmanager:PutSecretValue
+              - secretsmanager:UpdateSecretVersionStage
+          - Effect: Allow
+            Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+          - Effect: Allow
+            Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:log-stream:*
+            Action:
+              - logs:PutLogEvents
+      Roles:
+        - !Ref IoTCertificateRole
+
+  IoTCertificateFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Architectures: [arm64]
+      Runtime: python3.9
+      Description: Rotation function to generate IoT certificates via Secrets Manager
+      Role: !GetAtt IoTCertificateRole.Arn
+      Handler: certificate.handler
+      Code: ../libs/functions/certificate
+
+  IoTCertificateLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref IoTCertificateFunction
+      Principal: secretsmanager.amazonaws.com
+
+  IoTCertificateWaitHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Properties: {}
+
+  IoTCertificateWaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: IoTCertificateRotationSchedule
+    Properties:
+      Count: 1
+      Handle: !Ref IoTCertificateWaitHandle
+      Timeout: "260"
+
+  IoTCertificateSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      KmsKeyId: alias/aws/secretsmanager
+      Description: Greengrass fleet provisioning certificate and key info
+      SecretString: !Sub '{ "waitHandle": "${IoTCertificateWaitHandle}" }'
+
+  IoTCertificateRotationSchedule:
+    Type: AWS::SecretsManager::RotationSchedule
+    Properties:
+      RotationLambdaARN: !GetAtt IoTCertificateFunction.Arn
+      RotationRules:
+        AutomaticallyAfterDays: 365
+      SecretId: !Ref IoTCertificateSecret
+
+Outputs:
+  IoTCertificateSecret:
+    Value: !Ref IoTCertificateSecret
+  TrashBinS3BucketName:
+    Value: !Ref TrashBinS3Bucket

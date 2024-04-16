@@ -1,0 +1,188 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  BucketName:
+    Type: String
+  ArtefactsBucketName:
+    Type: String
+  SageMakerInferenceEndpointName:
+    Type: String
+
+Resources:
+  AuthStack:
+    Type: AWS::CloudFormation::Stack
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Properties:
+      TemplateURL: auth.yaml
+      Parameters:
+        BucketName: !Ref BucketName
+
+  ApiStack:
+    Type: AWS::CloudFormation::Stack
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Properties:
+      TemplateURL: api.yaml
+      Parameters:
+        AuthCognitoUserPoolId: !GetAtt AuthStack.Outputs.UserPoolId
+        WasteItemTableName: WasteItem
+        WasteMassTableName: WasteMass
+
+  S3EventHandler:
+    Type: AWS::Serverless::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: VPC not required.
+          - id: W92
+            reason: Reserved Concurrency not required.
+    Properties:
+      Runtime: python3.10
+      Handler: handle-event.handler
+      MemorySize: 512
+      Timeout: 180
+      Architectures:
+        - arm64
+      CodeUri: ../libs/functions/handle-event/
+      Environment:
+        Variables:
+          APPSYNC_REGION: !Ref AWS::Region
+          APPSYNC_ENDPOINT: !GetAtt ApiStack.Outputs.GraphQLAPIEndpoint
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - appsync:GraphQL
+              Resource: !Sub "arn:${AWS::Partition}:appsync:${AWS::Region}:${AWS::AccountId}:apis/${ApiStack.Outputs.GraphQLAPIId}/*"
+
+  InvokeZeroShotImageClassificationModel:
+    Type: AWS::Serverless::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: VPC not required.
+          - id: W92
+            reason: Reserved Concurrency not required.
+    Properties:
+      Runtime: python3.10
+      Handler: zero-shot-image-classification.handler
+      MemorySize: 512
+      Timeout: 180
+      Architectures:
+        - arm64
+      CodeUri: ../libs/functions/zero-shot-image-classification/
+      Environment:
+        Variables:
+          INFEREENCE_ENDPOINT_NAME: !Ref SageMakerInferenceEndpointName
+          S3_BUCKET_REGION: !Ref AWS::Region
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - sagemaker:InvokeEndpoint
+              Resource:
+                - !Sub arn:${AWS::Partition}:s3:::${BucketName}/*
+                - !Sub arn:${AWS::Partition}:sagemaker:${AWS::Region}:${AWS::AccountId}:endpoint/${SageMakerInferenceEndpointName}
+            - Effect: Allow
+              Action:
+                - iot:Publish
+              Resource:
+                - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/DemoWasteBin/shadow/update
+
+  ArchiveImage:
+    Type: AWS::Serverless::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: VPC not required.
+          - id: W92
+            reason: Reserved Concurrency not required.
+    Properties:
+      Runtime: python3.10
+      Handler: archive-image.handler
+      MemorySize: 512
+      Timeout: 180
+      Architectures:
+        - arm64
+      CodeUri: ../libs/functions/archive-image/
+      Environment:
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+                - s3:CopyObject
+              Resource:
+                - !Sub arn:${AWS::Partition}:s3:::${BucketName}/
+                - !Sub arn:${AWS::Partition}:s3:::${BucketName}/*
+
+  StateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: statemachine.yaml
+      DefinitionSubstitutions:
+        S3EventHandlerArn: !GetAtt S3EventHandler.Arn
+        InvokeZeroShotImageClassificationModelArn: !GetAtt InvokeZeroShotImageClassificationModel.Arn
+        ArchiveImageArn: !GetAtt ArchiveImage.Arn
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource:
+                - !GetAtt S3EventHandler.Arn
+                - !GetAtt InvokeZeroShotImageClassificationModel.Arn
+                - !GetAtt ArchiveImage.Arn
+            - Effect: Allow
+              Action:
+                - rekognition:DetectLabels
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource:
+                - !Sub "arn:${AWS::Partition}:s3:::${BucketName}/public/*"
+      Events:
+        EBRule:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              source:
+                - aws.s3
+              detail-type:
+                - Object Created
+              detail:
+                bucket:
+                  name:
+                    - !Ref BucketName
+                object:
+                  key:
+                    - prefix: public/
+
+Outputs:
+  CognitoIdentityPoolId:
+    Value: !GetAtt AuthStack.Outputs.IdentityPoolId
+
+  UserPoolsId:
+    Value: !GetAtt AuthStack.Outputs.UserPoolId
+
+  UserPoolsWebClientId:
+    Value: !GetAtt AuthStack.Outputs.AppClientIDWeb
+
+  AppsyncGraphqlEndpoint:
+    Value: !GetAtt ApiStack.Outputs.GraphQLAPIEndpoint
+
+  UserFilesS3Bucket:
+    Value: !Ref BucketName

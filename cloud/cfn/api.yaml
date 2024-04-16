@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  AuthCognitoUserPoolId:
+    Type: String
+
+  WasteItemTableName:
+    Type: String
+
+  WasteMassTableName:
+    Type: String
+
+Resources:
+  WebAppApi:
+    Type: AWS::Serverless::GraphQLApi
+    Properties:
+      Auth:
+        Type: AWS_IAM
+        Additional:
+          - Type: AMAZON_COGNITO_USER_POOLS
+            UserPool:
+              AwsRegion: !Ref AWS::Region
+              UserPoolId: !Ref AuthCognitoUserPoolId
+      SchemaUri: ../libs/api/schema.graphql
+      DataSources:
+        DynamoDb:
+          WasteItem:
+            TableName: !Ref WasteItemTable
+            TableArn: !GetAtt WasteItemTable.Arn
+          WasteMass:
+            TableName: !Ref WasteMassTable
+            TableArn: !GetAtt WasteMassTable.Arn
+      Functions:
+        createWasteItem:
+          DataSource: WasteItem
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          CodeUri: ../libs/api/createItem.js
+        updateWasteItem:
+          DataSource: WasteItem
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          CodeUri: ../libs/api/updateItem.js
+        deleteWasteItem:
+          DataSource: WasteItem
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          CodeUri: ../libs/api/deleteItem.js
+        getWasteItem:
+          DataSource: WasteItem
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          CodeUri: ../libs/api/getItem.js
+        listWasteItem:
+          DataSource: WasteItem
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          CodeUri: ../libs/api/listItem.js
+        createWasteMass:
+          DataSource: WasteMass
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          CodeUri: ../libs/api/createItem.js
+        updateWasteMass:
+          DataSource: WasteMass
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          CodeUri: ../libs/api/updateItem.js
+        deleteWasteMass:
+          DataSource: WasteMass
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          CodeUri: ../libs/api/deleteItem.js
+        getWasteMass:
+          DataSource: WasteMass
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          CodeUri: ../libs/api/getItem.js
+        listWasteMass:
+          DataSource: WasteMass
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          CodeUri: ../libs/api/listItem.js
+      Resolvers:
+        Mutation:
+          createWasteItem:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - createWasteItem
+          updateWasteItem:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - updateWasteItem
+          deleteWasteItem:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - deleteWasteItem
+          createWasteMass:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - createWasteMass
+          updateWasteMass:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - updateWasteMass
+          deleteWasteMass:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - deleteWasteMass
+        Query:
+          getWasteItem:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - getWasteItem
+          listWasteItem:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - listWasteItem
+          getWasteMass:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - getWasteMass
+          listWasteMass:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - listWasteMass
+
+  WasteItemTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: !Ref WasteItemTableName
+
+  WasteMassTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: !Ref WasteMassTableName
+
+Outputs:
+  GraphQLAPIEndpoint:
+    Description: Your GraphQL API endpoint.
+    Value: !GetAtt WebAppApi.GraphQLUrl
+
+  GraphQLAPIId:
+    Description: Your GraphQL API id.
+    Value: !GetAtt WebAppApi.ApiId

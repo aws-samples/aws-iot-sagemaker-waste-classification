@@ -1,0 +1,5 @@
+awsiotsdk==1.19.0
+opencv-python==4.6.0.66
+numpy==1.24.3
+picamera2==0.1.1
+smbus
