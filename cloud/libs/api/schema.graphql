@@ -1,0 +1,170 @@
+type WasteItem @aws_iam @aws_cognito_user_pools {
+    id: ID!
+    filePath: String!
+    labels: [AWSJSON]
+    wasteType: String
+}
+
+type WasteMass @aws_iam @aws_cognito_user_pools {
+    id: ID!
+    wasteType: String!
+    mass: Float!
+}
+
+type WasteItemConnection @aws_iam @aws_cognito_user_pools {
+    items: [WasteItem]
+    nextToken: String
+}
+
+type WasteMassConnection @aws_iam @aws_cognito_user_pools {
+    items: [WasteMass]
+    nextToken: String
+}
+
+input CreateWasteItemInput {
+    filePath: String!
+    labels: [AWSJSON]
+    wasteType: String
+}
+
+input UpdateWasteItemInput {
+    id: ID!
+    filePath: String
+    labels: [AWSJSON]
+    wasteType: String
+}
+
+input DeleteWasteItemInput {
+    id: ID!
+}
+
+input CreateWasteMassInput {
+    wasteType: ID!
+    mass: Float!
+}
+
+input UpdateWasteMassInput {
+    id: ID!
+    wasteType: ID
+    mass: Float
+}
+
+input DeleteWasteMassInput {
+    id: ID!
+}
+
+input WasteItemFilterInput {
+    id: TableIDInput
+    filePath: TableStringInput
+    labels:TableStringInput
+    wasteType: TableStringInput
+    and: [WasteItemFilterInput]
+    or: [WasteItemFilterInput]
+    not: WasteItemFilterInput
+}
+
+input WasteMassFilterInput {
+    id: TableIDInput
+    wasteType: TableStringInput
+    mass: TableFloatInput
+    and: [WasteMassFilterInput]
+    or: [WasteMassFilterInput]
+    not: WasteMassFilterInput
+}
+
+input WasteItemConditionInput {
+    filePath: TableStringInput
+    labels:TableStringInput
+    wasteType: TableStringInput
+    and: [WasteItemConditionInput]
+    or: [WasteItemConditionInput]
+    not: WasteItemConditionInput
+}
+
+input WasteMassConditionInput {
+    wasteType: TableIDInput
+    mass: TableFloatInput
+    and: [WasteMassConditionInput]
+    or: [WasteMassConditionInput]
+    not: WasteMassConditionInput
+}
+
+type Subscription {
+    onCreateWasteItem(filter: WasteItemFilterInput): WasteItem @aws_subscribe(mutations: ["createWasteItem"]) @aws_iam @aws_cognito_user_pools
+    onUpdateWasteItem(filter: WasteItemFilterInput): WasteItem @aws_subscribe(mutations: ["updateWasteItem"]) @aws_iam @aws_cognito_user_pools
+    onDeleteWasteItem(filter: WasteItemFilterInput): WasteItem @aws_subscribe(mutations: ["deleteWasteItem"]) @aws_iam @aws_cognito_user_pools
+    onCreateWasteMass(filter: WasteMassFilterInput): WasteMass @aws_subscribe(mutations: ["createWasteMass"]) @aws_iam @aws_cognito_user_pools
+    onUpdateWasteMass(filter: WasteMassFilterInput): WasteMass @aws_subscribe(mutations: ["updateWasteMass"]) @aws_iam @aws_cognito_user_pools
+    onDeleteWasteMass(filter: WasteMassFilterInput): WasteMass @aws_subscribe(mutations: ["deleteWasteMass"]) @aws_iam @aws_cognito_user_pools
+}
+
+type Mutation {
+    createWasteItem(input: CreateWasteItemInput!, condition: WasteItemConditionInput): WasteItem @aws_iam @aws_cognito_user_pools
+    updateWasteItem(input: UpdateWasteItemInput!, condition: WasteItemConditionInput): WasteItem @aws_iam @aws_cognito_user_pools
+    deleteWasteItem(input: DeleteWasteItemInput!, condition: WasteItemConditionInput): WasteItem @aws_iam @aws_cognito_user_pools
+    createWasteMass(input: CreateWasteMassInput!, condition: WasteMassConditionInput): WasteMass @aws_iam @aws_cognito_user_pools
+    updateWasteMass(input: UpdateWasteMassInput!, condition: WasteMassConditionInput): WasteMass @aws_iam @aws_cognito_user_pools
+    deleteWasteMass(input: DeleteWasteMassInput!, condition: WasteMassConditionInput): WasteMass @aws_iam @aws_cognito_user_pools
+}
+
+type Query {
+    getWasteItem(id: ID!): WasteItem @aws_iam @aws_cognito_user_pools
+    listWasteItem(filter: WasteItemFilterInput, limit: Int, nextToken: String): WasteItemConnection @aws_iam @aws_cognito_user_pools
+    getWasteMass(id: ID!): WasteMass @aws_iam @aws_cognito_user_pools
+    listWasteMass(filter: WasteMassFilterInput, limit: Int, nextToken: String): WasteMassConnection @aws_iam @aws_cognito_user_pools
+}
+
+input TableBooleanInput {
+    ne: Boolean
+    eq: Boolean
+}
+
+input TableFloatInput {
+    ne: Float
+    eq: Float
+    le: Float
+    lt: Float
+    ge: Float
+    gt: Float
+    contains: Float
+    notContains: Float
+    between: [Float]
+}
+
+input TableIDInput {
+    ne: ID
+    eq: ID
+    le: ID
+    lt: ID
+    ge: ID
+    gt: ID
+    contains: ID
+    notContains: ID
+    between: [ID]
+    beginsWith: ID
+}
+
+input TableIntInput {
+    ne: Int
+    eq: Int
+    le: Int
+    lt: Int
+    ge: Int
+    gt: Int
+    contains: Int
+    notContains: Int
+    between: [Int]
+}
+
+input TableStringInput {
+    ne: String
+    eq: String
+    le: String
+    lt: String
+    ge: String
+    gt: String
+    contains: String
+    notContains: String
+    between: [String]
+    beginsWith: String
+}

@@ -1,0 +1,274 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Setup IoT core and greengrass cloud resources for IoT fleet provisioning of IoT device gateway
+
+Parameters:
+  ArtefactsBucketName:
+    Type: String
+
+  TrashBinS3BucketName:
+    Type: String
+
+  IoTCertificateSecret:
+    Type: String
+
+  IoTCoreRoleAlias:
+    Type: String
+
+Resources:
+  IoTRoleAliasRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: lambda.amazonaws.com
+
+  IoTRoleAliasPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: !Sub Allows the IoTRoleAliasFunction to create alias. Stack ${AWS::StackName}
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Resource: !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:rolealias/${IoTCoreRoleAlias}
+            Action:
+              - iot:CreateRoleAlias
+              - iot:UpdateRoleAlias
+              - iot:DeleteRoleAlias
+          - Effect: Allow
+            Resource: !GetAtt IoTTokenExchangeRole.Arn
+            Action:
+              - iam:PassRole
+      Roles:
+        - !Ref IoTRoleAliasRole
+
+  IoTTokenExchangeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: credentials.iot.amazonaws.com
+      Description: Greengrass core devices assume this role to access AWS resources
+
+  IoTTokenExchangePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Permissions required for Greengrass token exchange
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Resource: !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:cert/*
+            Action:
+              - iot:DescribeCertificate
+          - Effect: Allow
+            Resource:
+              - !Sub arn:${AWS::Partition}:s3:::${ArtefactsBucketName}
+              - !Sub arn:${AWS::Partition}:s3:::${ArtefactsBucketName}/*
+            Action:
+              - s3:GetObject
+              - s3:GetBucketLocation
+          - Effect: Allow
+            Resource:
+              - !Sub arn:${AWS::Partition}:s3:::${TrashBinS3BucketName}
+              - !Sub arn:${AWS::Partition}:s3:::${TrashBinS3BucketName}/*
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:PutObjectVersionAcl
+              - s3:PutObjectAcl
+              - s3:GetBucketAcl
+              - s3:AbortMultipartUpload
+              - s3:ListMultipartUploadParts
+              - s3:GetBucketLocation
+              - s3:GetObjectVersion
+              - s3:GetObjectTagging
+              - s3:PutObjectTagging
+              - s3:GetObjectVersionTagging
+              - s3:ListBucketVersions
+              - s3:ListBucket
+              - s3:GetObjectAcl
+              - s3:GetObjectVersionAcl
+              - s3:PutBucketVersioning
+
+      Roles:
+        - !Ref IoTTokenExchangeRole
+
+  CloudWatchLogsServiceAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: !Sub Allows the Lambda Function to access CloudWatch logs. Stack ${AWS::StackName}
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource:
+            - !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*
+            - !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:log-stream:*
+      Roles:
+        - !Ref IoTRoleAliasRole
+        - !Ref IoTTokenExchangeRole
+
+  IoTRoleAliasFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Architectures: [arm64]
+      Runtime: python3.9
+      Description: Custom resource handler to provision a IoT role alias from CloudFormation
+      Role: !GetAtt IoTRoleAliasRole.Arn
+      Handler: role_alias.handler
+      Code: ../libs/functions/role-alias
+
+  IoTTokenExchangeRoleAlias:
+    Type: Custom::IotRoleAlias
+    DependsOn:
+      - IoTRoleAliasPolicy
+    Properties:
+      ServiceToken: !GetAtt IoTRoleAliasFunction.Arn
+      Role: !GetAtt IoTTokenExchangeRole.Arn
+      Alias: !Ref IoTCoreRoleAlias
+
+  FleetProvisioningRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: iot.amazonaws.com
+      Description: Used for provisioning new greengrass core devices
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::${AWS::Partition}:policy/service-role/AWSIoTThingsRegistration
+
+  CoreDeviceAccessPolicy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Resource:
+              - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/*
+              - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:client/*
+              - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:cert/*
+              - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/*
+            Action:
+              - iot:Publish
+              - iot:Receive
+              - iot:Connect
+              - iot:Subscribe
+          - Effect: Allow
+            Resource: "*"
+            Action:
+              - greengrass:GetComponentVersionArtifact
+              - greengrass:ResolveComponentCandidates
+              - greengrass:GetDeploymentConfiguration
+              - greengrass:ListThingGroupsForCoreDevice
+              - greengrass:PutCertificateAuthorities
+              - greengrass:VerifyClientDeviceIdentity
+              - greengrass:VerifyClientDeviceIoTCertificateAssociation
+              - greengrass:GetConnectivityInfo
+              - greengrass:UpdateConnectivityInfo
+              - greengrass:Discover
+          - Effect: Allow
+            Resource: !GetAtt IoTTokenExchangeRoleAlias.roleAliasArn
+            Action: iot:AssumeRoleWithCertificate
+
+  GreengrassProvisioningPolicy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Resource: !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:client/*
+            Action: iot:Connect
+          - Effect: Allow
+            Resource:
+              - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/certificates/create/*
+              - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/provisioning-templates/${FleetProvisioningTemplate}/provision/*
+            Action:
+              - iot:Publish
+              - iot:Receive
+          - Effect: Allow
+            Resource:
+              - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/certificates/create/*
+              - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/provisioning-templates/${FleetProvisioningTemplate}/provision/*
+            Action: iot:Subscribe
+
+  FleetProvisioningTemplate:
+    Type: AWS::IoT::ProvisioningTemplate
+    Properties:
+      Description: Template to provision waste bins as IoT things
+      Enabled: true
+      ProvisioningRoleArn: !GetAtt FleetProvisioningRole.Arn
+      TemplateBody: !Sub |
+        {
+          "Parameters": {
+            "ThingName": { "Type": "String" },
+            "SerialNumber" : {
+                  "Type" : "String"
+              },
+            "Location" : {
+                  "Type" : "String",
+                  "Default" : "UK"
+              },
+            "AWS::IoT::Certificate::Id": { "Type": "String" }
+          },
+          "Resources": {
+            "ThingDefinition": {
+              "OverrideSettings": {
+                "AttributePayload": "REPLACE",
+                "ThingGroups": "REPLACE",
+                "ThingTypeName": "REPLACE"
+              },
+              "Properties": {
+                "AttributePayload": {"serialNumber" :  {"Ref" : "SerialNumber"},
+                "location" :  {"Ref" : "Location"}},
+                "ThingName": { "Ref": "ThingName" }
+              },
+              "Type": "AWS::IoT::Thing"
+            },
+            "ThingPolicy": {
+              "Properties": { "PolicyName": "${CoreDeviceAccessPolicy}" },
+              "Type": "AWS::IoT::Policy"
+            },
+            "ThingCertificate": {
+              "Properties": {
+                "CertificateId": { "Ref": "AWS::IoT::Certificate::Id" },
+                "Status": "Active"
+              },
+              "Type": "AWS::IoT::Certificate"
+            }
+          }
+        }
+
+  CertificateAttachment:
+    Type: AWS::IoT::PolicyPrincipalAttachment
+    Properties:
+      PolicyName: !Ref GreengrassProvisioningPolicy
+      Principal: !Sub
+        - "{{resolve:secretsmanager:${Secret}::certificateArn}}"
+        - Secret: !Ref IoTCertificateSecret
+
+Outputs:
+  FleetProvisioningTemplate:
+    Value: !Ref FleetProvisioningTemplate
+
+  IoTCoreRoleAlias:
+    Value: !Ref IoTCoreRoleAlias

@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: This recipe deploys custom sensor application component on to IoT gateway
+
+Parameters:
+  ArtefactsBucketName:
+    Type: String
+
+  TrashBinS3BucketName:
+    Type: String
+
+Resources:
+  SensorApp:
+    Type: AWS::GreengrassV2::ComponentVersion
+    Properties:
+      InlineRecipe: !Sub |
+        ComponentConfiguration:
+          DefaultConfiguration:
+            "cameraType": "webcam"
+            "buttonDebounce": 500
+            "button_pin": 18
+            accessControl:
+              aws.greengrass.ipc.mqttproxy:
+                com.rpicam.detect:mqttproxy:1:
+                  operations:
+                    - aws.greengrass#SubscribeToIoTCore
+                  resources:
+                    - $aws/things/DemoWasteBin/shadow/update/accepted
+        ComponentDescription: Uses stream manager to upload a file to an S3 bucket.
+        ComponentName: com.rpicam.detect
+        ComponentPublisher: xyz@amazon.com
+        ComponentVersion: 3.3.3
+        Manifests:
+        - Artifacts:
+          - URI: s3://solution-repo-eu-west-1/greengrass-app-components/artifacts/com.rpicam.detect/1.0.1/RGB1602.py
+          - URI: s3://solution-repo-eu-west-1/greengrass-app-components/artifacts/com.rpicam.detect/1.0.1/push-button-camera.py
+          - URI: s3://solution-repo-eu-west-1/greengrass-app-components/artifacts/com.rpicam.detect/1.0.1/requirements.txt
+          Lifecycle:
+            Install: pip3 install --user -r {artifacts:path}/requirements.txt
+            setEnv:
+              TRASH_BUCKET: ${TrashBinS3BucketName}
+              REGION: ${AWS::Region}
+            Run: '
+              export PYTHONPATH=$PYTHONPATH:{artifacts:decompressedPath}/stream_manager_sdk;
+              python3 -u {artifacts:path}/push-button-camera.py "{configuration:/cameraType}" "{configuration:/buttonDebounce}" "{configuration:/button_pin}"
+              '
+          Platform:
+            os: linux
+        RecipeFormatVersion: '2020-01-25'

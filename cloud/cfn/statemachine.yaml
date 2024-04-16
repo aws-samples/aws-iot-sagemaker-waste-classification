@@ -1,0 +1,49 @@
+Comment: A state machine to manage the processing of Waste Image files
+
+StartAt: AppSyncCreate
+
+States:
+  AppSyncCreate:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    Parameters:
+      Payload.$: $
+      FunctionName: ${S3EventHandlerArn}
+    OutputPath: $.Payload
+    Next: DetectLabels
+  DetectLabels:
+    Type: Task
+    Resource: arn:aws:states:::aws-sdk:rekognition:detectLabels
+    Parameters:
+      Features:
+        - GENERAL_LABELS
+      Image:
+        S3Object:
+          Bucket.$: $.detail.bucket.name
+          Name.$: $.detail.object.key
+    ResultPath: $.rekognition
+    Next: ImageClassification
+  ImageClassification:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    Parameters:
+      Payload.$: $
+      FunctionName: ${InvokeZeroShotImageClassificationModelArn}
+    OutputPath: $.Payload
+    Next: AppSyncUpdate
+  AppSyncUpdate:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    Parameters:
+      Payload.$: $
+      FunctionName: ${S3EventHandlerArn}
+    OutputPath: $.Payload
+    Next: ArchiveImage
+  ArchiveImage:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    Parameters:
+      Payload.$: $
+      FunctionName: ${ArchiveImageArn}
+    OutputPath: $.Payload
+    End: True

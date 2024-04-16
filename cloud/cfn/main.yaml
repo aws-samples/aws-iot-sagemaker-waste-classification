@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Creates AWS IoT Smart Wastebin app (uksb-1st924ocu).
+
+Metadata:
+  Version: 0.2.0
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Project configuration
+        Parameters:
+          - ProjectName
+          - Environment
+      - Label:
+          default: IoT configuration
+        Parameters:
+          - ArtefactsBucketName
+          - IoTCoreRoleAlias
+    ParameterLabels:
+      ProjectName:
+        default: Project Name
+      Environment:
+        default: Environment Type
+      ArtefactsBucketName:
+        default: Artefacts Bucket Name
+      IoTCoreRoleAlias:
+        default: IoT Core Role Alias
+
+Parameters:
+  ProjectName:
+    Description: The name of the project. The name must only contain alphanumeric characters.
+    Type: String
+    Default: smart-bin-demo-app
+    AllowedPattern: ^[a-zA-Z0-9_-]*$
+    ConstraintDescription: Must contain only alphanumeric characters.
+
+  ArtefactsBucketName:
+    Description: S3 bucket name for hosting greengrass custom component app. Artefacts bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).
+    Type: String
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-.]*[0-9a-zA-Z])*$
+    ConstraintDescription: Artefacts bucket name can include numbers, lowercase letters, uppercase letters, periods (.), and hyphens (-). It cannot start or end with a hyphen (-).
+
+  SageMakerInferenceEndpointName:
+    Type: String
+    Description: SageMaker inference endpoint name for zero shot image classification model
+    Default: huggingface-pytorch-inference-2023-08-31-18-37-17-013
+
+  IoTCoreRoleAlias:
+    Description: Create an AWS IoT Core role alias. The alias must contain 1-128 characters and must include only alphanumeric characters and the =, @, and - symbols.
+    Type: String
+    Default: GreengrassTokenExchangeAlias
+    MinLength: 1
+    MaxLength: 128
+    AllowedPattern: ^[\w=,@-]+$
+    ConstraintDescription: Must contain 1-128 characters and must include only alphanumeric characters and the =, @, and - symbols. Uppercase and lowercase alphabetic characters are allowed.
+
+  Environment:
+    Description: The type of environment with which to tag your infrastructure. Valid values are DEV (development), TEST (test), or PROD (production).
+    Type: String
+    AllowedValues:
+      - DEV
+      - TEST
+      - PROD
+    Default: DEV
+
+Resources:
+  IoTCertificateStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: certificate.yaml
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  IoTFleetProvisioningStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: fleet-provisioning.yaml
+      Parameters:
+        ArtefactsBucketName: !Ref ArtefactsBucketName
+        TrashBinS3BucketName: !GetAtt IoTCertificateStack.Outputs.TrashBinS3BucketName
+        IoTCertificateSecret: !GetAtt IoTCertificateStack.Outputs.IoTCertificateSecret
+        IoTCoreRoleAlias: !Ref IoTCoreRoleAlias
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  IoTCustomComponentsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ../pi/recipe/com-rpicam-detect.yaml
+      Parameters:
+        ArtefactsBucketName: !Ref ArtefactsBucketName
+        TrashBinS3BucketName: !GetAtt IoTCertificateStack.Outputs.TrashBinS3BucketName
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  AppSyncStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: appsync.yaml
+      Parameters:
+        BucketName: !GetAtt IoTCertificateStack.Outputs.TrashBinS3BucketName
+        ArtefactsBucketName: !Ref ArtefactsBucketName
+        SageMakerInferenceEndpointName: !Ref SageMakerInferenceEndpointName
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+Outputs:
+  CertificateSecret:
+    Description: Secret holding the generated fleet provisioning certificate and keys
+    Value: !GetAtt IoTCertificateStack.Outputs.IoTCertificateSecret
+
+  TrashBinS3BucketName:
+    Description: Trash bin bucket name
+    Value: !GetAtt IoTCertificateStack.Outputs.TrashBinS3BucketName
+
+  FleetProvisioningTemplate:
+    Description: Name of the template to use for fleet provisioning
+    Value: !GetAtt IoTFleetProvisioningStack.Outputs.FleetProvisioningTemplate
+
+  IoTCoreRoleAlias:
+    Description: AWS IoT Core role alias
+    Value: !GetAtt IoTFleetProvisioningStack.Outputs.IoTCoreRoleAlias
+
+  CognitoIdentityPoolId:
+    Value: !GetAtt AppSyncStack.Outputs.CognitoIdentityPoolId
+
+  UserPoolsId:
+    Value: !GetAtt AppSyncStack.Outputs.UserPoolsId
+
+  UserPoolsWebClientId:
+    Value: !GetAtt AppSyncStack.Outputs.UserPoolsWebClientId
+
+  AppsyncGraphqlEndpoint:
+    Value: !GetAtt AppSyncStack.Outputs.AppsyncGraphqlEndpoint
