@@ -1,7 +1,7 @@
 <h1 align="center">
 AWS IoT AIML Waste Classification
 <br>
-   <a href="https://github.com/aws-samples/aws-iot-sagemaker-waste-classification/releases"><img alt="GitHub release (latest by date" src="https://img.shields.io/github/v/release/aws-iot-sagemaker-waste-classification?display_name=tag"></a>
+   <a href="https://github.com/aws-samples/aws-iot-sagemaker-waste-classification/releases"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/aws-iot-sagemaker-waste-classification?display_name=tag"></a>
    <a href="https://github.com/aws-samples/aws-iot-sagemaker-waste-classification/actions"><img alt="GitHub Workflow Status" src="https://github.com/aws-samples/aws-iot-sagemaker-waste-classification/workflows/Unit%20Tests/badge.svg"></a>
 </h1>
 
