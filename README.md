@@ -1,8 +1,8 @@
 <h1 align="center">
 AWS IoT AIML Waste Classification
 <br>
-   <a href="https://github.com/aws-samples/aws-iot-aiml-waste-classification/releases"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/aws-iot-aiml-waste-classification?display_name=tag"></a>
-   <a href="https://github.com/aws-samples/aws-iot-aiml-waste-classification/actions"><img alt="GitHub Workflow Status" src="https://github.com/aws-samples/aws-iot-aiml-waste-classification/workflows/Unit%20Tests/badge.svg"></a>
+   <a href="https://github.com/aws-samples/aws-iot-sagemaker-waste-classification/releases"><img alt="GitHub release (latest by date" src="https://img.shields.io/github/v/release/aws-iot-sagemaker-waste-classification?display_name=tag"></a>
+   <a href="https://github.com/aws-samples/aws-iot-sagemaker-waste-classification/actions"><img alt="GitHub Workflow Status" src="https://github.com/aws-samples/aws-iot-sagemaker-waste-classification/workflows/Unit%20Tests/badge.svg"></a>
 </h1>
 
 AWS IoT with zero shot waste image classification is an interactive demo of prompting CLIP models with a camera image and guiding a human to pick correct waste bin type.
