@@ -1,3 +1,6 @@
+#Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#SPDX-License-Identifier: MIT-0
+
 import RPi.GPIO as GPIO
 import time
 import json
@@ -195,7 +198,7 @@ def display(result):
     lcd.printout("AWS-LHR14")
     lcd.setCursor(0, 1)
     lcd.printout(result)
-    time.sleep(5)
+    # time.sleep(5)  # uncomment this line to wait 5 seconds before clearing the screen
     lcd.setCursor(0, 0)
     lcd.printout("AWS-LHR14")
     lcd.setCursor(0, 1)
@@ -220,10 +223,10 @@ def push_to_s3(filename):
             Succeeded = True
         except stream_manager.StreamManagerException:
             attempts -= 1
-            time.sleep(2)
+            # time.sleep(2) # uncomment this line to wait 2 seconds before retrying
         except ConnectionError or TimeoutError:
             attempts -= 1
-            time.sleep(2)
+            # time.sleep(2) # uncomment this line to wait 2 seconds before retrying
 
 
 def video_capture(filename, camera) -> None:

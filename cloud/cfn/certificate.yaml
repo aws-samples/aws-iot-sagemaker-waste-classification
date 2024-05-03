@@ -1,3 +1,6 @@
+#Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#SPDX-License-Identifier: MIT-0
+
 AWSTemplateFormatVersion: "2010-09-09"
 
 Description: Provision IoT certificate.
@@ -14,6 +17,10 @@ Resources:
       NotificationConfiguration:
         EventBridgeConfiguration:
           EventBridgeEnabled: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
 
   IoTCertificateRole:
     Type: AWS::IAM::Role
@@ -32,6 +39,8 @@ Resources:
       Description: !Sub Allows the IoTRoleAliasFunction to create alias. Stack ${AWS::StackName}
       PolicyDocument:
         Version: "2012-10-17"
+        #https://docs.aws.amazon.com/iot/latest/developerguide/security_iam_service-with-iam.html#security_iam_service-with-iam-id-based-policies
+        # Some AWS IoT actions, such as those for creating resources, cannot be performed on a specific resource. In those cases, you must use the wildcard (*).
         Statement:
           - Effect: Allow
             Resource: "*"

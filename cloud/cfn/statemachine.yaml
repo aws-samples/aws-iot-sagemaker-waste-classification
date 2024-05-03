@@ -1,3 +1,6 @@
+#Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#SPDX-License-Identifier: MIT-0
+
 Comment: A state machine to manage the processing of Waste Image files
 
 StartAt: AppSyncCreate

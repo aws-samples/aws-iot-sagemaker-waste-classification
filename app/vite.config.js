@@ -1,3 +1,8 @@
+/**
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: MIT-0
+ */
+
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -5,17 +10,17 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   optimizeDeps: {
     esbuildOptions: {
-        // Node.js global to browser globalThis
-        define: {
-            global: "globalThis", //<-- AWS SDK
-        },
+      // Node.js global to browser globalThis
+      define: {
+        global: "globalThis", //<-- AWS SDK
+      },
     },
   },
   plugins: [react()],
   resolve: {
     // this is required for Amplify
     alias: {
-        './runtimeConfig': './runtimeConfig.browser',
+      './runtimeConfig': './runtimeConfig.browser',
     },
   },
 })

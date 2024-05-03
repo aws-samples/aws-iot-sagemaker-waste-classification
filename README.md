@@ -55,8 +55,14 @@ The key AWS services used in this architecture are:
     ```
 2. [Complete pre-requisites for AWS ClI]("https://docs.aws.amazon.com/cli/latest/userguide/getting-started-prereqs.html")
 3. [Complete pre-requisites for AWS SAM ClI]("https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/prerequisites.html")
-3. [Install aws cli by following AWS documentation]("https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html")
-3. [Install aws sam cli by following AWS documentation]("https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html")
+4. [Install aws cli by following AWS documentation]("https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html")
+5. [Install aws sam cli by following AWS documentation]("https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html")
+6. [Download LCD1602 RGB Module for Raspberry Pi](waveshare.com/wiki/LCD1602_RGB_Module)
+    ```bash
+    curl https://files.waveshare.com/upload/5/5b/LCD1602-RGB-Module-demo.zip --output LCD1602-RGB-Module-demo.zip
+    unzip LCD1602-RGB-Module-demo.zip
+    ```
+    Once the repository is cloned, copy the file ```LCD1602-RGB-Module-demo/Raspberry/RGB1602.py``` to ```cloud/pi/artifacts/com.rpicam.detect/1.0.1/``` within the repository
 
 
 ### Deploy CLIP model
@@ -67,12 +73,12 @@ The key AWS services used in this architecture are:
 5. Once model is deployed, note down the inference endpoint name from Inference/Endpoints section in Amazon SageMaker console.
 
 ### Create S3 Bucket
-1. Create a S3 bucket and note the name.
+1. Create a S3 bucket for storing the artifacts and note the name.
 
 # Deploy Solution
 1. Upload the edge camera application to S3 bucket
 ```bash
-aws s3 cp ./cloud/pi s3://solution-repo-eu-west-1/greengrass-app-components --recursive
+aws s3 cp ./cloud/pi s3://<use bucket created on step 1>/greengrass-app-components --recursive
 ```
 2. Deploy cloud infrastructure
 ```bash
@@ -109,38 +115,6 @@ d. Select Lambda service and open Lambda function containing name "S3 event hand
 
 <img src="docs/layer.png" alt="Python 3.10 compatible request package" width="800"/>
 
-
-# Build AWS Greengrass package for pi
-
-1. Run below command to prepare package on your laptop or PI. Please make sure that you have installed AWS CLI v2 with access to your
-AWS account.
-  For this use case, I execute on my laptop to create package in build directory. You can then copy
-  package on your IoT gateway (e.g., Raspberry Pi). The below script performs following steps.
-  1. Create build directory
-  2. Download AWS CA
-  3. Download claim certificates from AWS Secrets Manager
-  4. Download AWS IoT Greengrass and fleeting provisioning plugin
-  5. Get the endpoints and fleet provisioning template for AWS IoT Core
-  6. Prepare config.yml.
-  7. Prepare Greengrass start up command.
-  8. Change execution permission
-
-```bash
-chmod 755 edge/ci/prepare-rpi-deploy-pkg.sh
-edge/ci/prepare-rpi-deploy-pkg.sh <Stack Name given in step 2> <AWS_REGION>
-```
-2. Copy build directory to Pi either doing ssh to pi or using usb drive.
-
-# Deply the solution to Pi
-Once the resources are set up on AWS cloud, please deploy AWS greengrass and application on your IoT gateway i.e. Raspberry PI for testing E2E solution. 
-Please refer the steps [Deploy AWS IoT Greengrass on IoT Gateway](docs/aws_iot_greengrass_setup.md). In the instruction section "Test remote application deployment", 
-edge app name appears as "monitor_wastebin_app". In this deployment, it appears "com.rpicam.detect".
-
-2. After you successfully execute above tests, then check logs files for successful deployment and connection to AWS IoT core
-```bash
-sudo cd /v2/greengrass/logs
-tail -100f greegrass.logs
-```
 # Configure UI
 
 1. Edit app/src/aws-exports file and replace the values of below config variables by referring to the infrastructure details from step 2 in Deploy Solution section above.
@@ -168,8 +142,40 @@ Go to dist folder under app folder and manually select all files and create a zi
 1. Login to AWS console and select AWS Amplify service
 2. Select host web app in new app dropdown button
 3. Choose "Deploy without git provider" under Amplify hosting and select continue button
-4. Give name to you webapp, then upload ui.zip file from app/dist folder and select "Save and deploy" button
+4. Give name to you webapp, then upload ui.zip file or (select all files from dist folder if not zipped) from app/dist folder and select "Save and deploy" button
 5. Use the app url generated under domain field to launch it and follow the steps to login using user created in previous section.
+
+# Build AWS Greengrass package for Pi
+
+1. Run below command to prepare package on your laptop or PI. Please make sure that you have installed AWS CLI v2 with access to your
+AWS account.
+  For this use case, I execute on my laptop to create package in build directory. You can then copy
+  package on your IoT gateway (e.g., Raspberry Pi). The below script performs following steps.
+  1. Create build directory
+  2. Download AWS CA
+  3. Download claim certificates from AWS Secrets Manager
+  4. Download AWS IoT Greengrass and fleeting provisioning plugin
+  5. Get the endpoints and fleet provisioning template for AWS IoT Core
+  6. Prepare config.yml.
+  7. Prepare Greengrass start up command.
+  8. Change execution permission
+
+```bash
+chmod 755 edge/ci/prepare-rpi-deploy-pkg.sh
+edge/ci/prepare-rpi-deploy-pkg.sh <Stack Name given in step 2> <AWS_REGION>
+```
+2. Copy build directory to Pi either doing ssh to pi or using usb drive.
+
+# Deploy the solution to Pi
+Once the resources are set up on AWS cloud, please deploy AWS greengrass and application on your IoT gateway i.e. Raspberry PI for testing E2E solution. 
+Please refer the steps [Deploy AWS IoT Greengrass on IoT Gateway](docs/aws_iot_greengrass_setup.md). In the instruction section "Test remote application deployment", 
+edge app name appears as "monitor_wastebin_app". In this deployment, it appears "com.rpicam.detect".
+
+2. After you successfully execute above tests, then check logs files for successful deployment and connection to AWS IoT core
+```bash
+sudo cd /v2/greengrass/logs
+tail -100f greegrass.logs
+```
 
 # Local Development
 See the [Local Development](docs/LOCAL_DEVELOPMENT.md) guide to get a copy of the project up and running on your local machine for development and testing purposes.

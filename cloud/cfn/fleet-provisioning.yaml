@@ -1,3 +1,6 @@
+#Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#SPDX-License-Identifier: MIT-0
+
 AWSTemplateFormatVersion: "2010-09-09"
 
 Description: Setup IoT core and greengrass cloud resources for IoT fleet provisioning of IoT device gateway
@@ -173,7 +176,7 @@ Resources:
               - iot:Connect
               - iot:Subscribe
           - Effect: Allow
-            Resource: "*"
+            Resource: "*" #https://docs.aws.amazon.com/greengrass/v2/developerguide/security_iam_service-with-iam.html. Some AWS IoT Greengrass actions (for example, some list operations), cannot be performed on a specific resource. In those cases, you must use the wildcard alone.
             Action:
               - greengrass:GetComponentVersionArtifact
               - greengrass:ResolveComponentCandidates

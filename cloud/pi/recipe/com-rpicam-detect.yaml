@@ -1,3 +1,6 @@
+#Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#SPDX-License-Identifier: MIT-0
+
 AWSTemplateFormatVersion: "2010-09-09"
 
 Description: This recipe deploys custom sensor application component on to IoT gateway
@@ -32,9 +35,9 @@ Resources:
         ComponentVersion: 3.3.3
         Manifests:
         - Artifacts:
-          - URI: s3://solution-repo-eu-west-1/greengrass-app-components/artifacts/com.rpicam.detect/1.0.1/RGB1602.py
-          - URI: s3://solution-repo-eu-west-1/greengrass-app-components/artifacts/com.rpicam.detect/1.0.1/push-button-camera.py
-          - URI: s3://solution-repo-eu-west-1/greengrass-app-components/artifacts/com.rpicam.detect/1.0.1/requirements.txt
+          - URI: s3://${ArtefactsBucketName}/greengrass-app-components/artifacts/com.rpicam.detect/1.0.1/RGB1602.py
+          - URI: s3://${ArtefactsBucketName}/greengrass-app-components/artifacts/com.rpicam.detect/1.0.1/push-button-camera.py
+          - URI: s3://${ArtefactsBucketName}/greengrass-app-components/artifacts/com.rpicam.detect/1.0.1/requirements.txt
           Lifecycle:
             Install: pip3 install --user -r {artifacts:path}/requirements.txt
             setEnv:
