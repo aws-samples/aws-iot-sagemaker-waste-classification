@@ -1,6 +1,8 @@
 /**
  * AppSync function: Fetches an item in a DynamoDB table.
  * Find more samples and templates at https://github.com/aws-samples/aws-appsync-resolver-samples
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: MIT-0
  */
 
 import { util } from '@aws-appsync/utils';

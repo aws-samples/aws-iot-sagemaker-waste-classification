@@ -1,14 +1,15 @@
+#Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#SPDX-License-Identifier: MIT-0
+
 AWSTemplateFormatVersion: 2010-09-09
 
 Transform: AWS::Serverless-2016-10-31
 
 Parameters:
-
   BucketName:
     Type: String
 
 Resources:
-
   AuthRole:
     Type: AWS::IAM::Role
     Properties:
@@ -21,9 +22,9 @@ Resources:
             Action: sts:AssumeRoleWithWebIdentity
             Condition:
               StringEquals:
-                'cognito-identity.amazonaws.com:aud': !Ref IdentityPool
-              'ForAnyValue:StringLike':
-                'cognito-identity.amazonaws.com:amr': authenticated
+                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
+              "ForAnyValue:StringLike":
+                "cognito-identity.amazonaws.com:amr": authenticated
       Policies:
         - PolicyName: S3Access
           PolicyDocument:
@@ -32,7 +33,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - s3:GetObject
-                Resource: !Sub 'arn:${AWS::Partition}:s3:::${BucketName}/public/*'
+                Resource: !Sub "arn:${AWS::Partition}:s3:::${BucketName}/public/*"
 
   UnauthRole:
     Type: AWS::IAM::Role
@@ -46,9 +47,9 @@ Resources:
             Action: sts:AssumeRoleWithWebIdentity
             Condition:
               StringEquals:
-                'cognito-identity.amazonaws.com:aud': !Ref IdentityPool
-              'ForAnyValue:StringLike':
-                'cognito-identity.amazonaws.com:amr': unauthenticated
+                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
+              "ForAnyValue:StringLike":
+                "cognito-identity.amazonaws.com:amr": unauthenticated
 
   UserPool:
     Type: AWS::Cognito::UserPool
@@ -64,14 +65,16 @@ Resources:
         - email
       EmailVerificationMessage: Your verification code is {####}
       EmailVerificationSubject: Your verification code
-      MfaConfiguration: 'OFF'
+      MfaConfiguration: "ON"
+      EnabledMfas:
+        - SMS_MFA
       Policies:
         PasswordPolicy:
           MinimumLength: 8
-          RequireLowercase: false
-          RequireNumbers: false
-          RequireSymbols: false
-          RequireUppercase: false
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
       Schema:
         - Mutable: true
           Name: email
@@ -118,7 +121,6 @@ Resources:
         authenticated: !GetAtt AuthRole.Arn
 
 Outputs:
-
   IdentityPoolId:
     Description: Id for the identity pool
     Value: !Ref IdentityPool
