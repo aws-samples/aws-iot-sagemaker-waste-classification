@@ -67,7 +67,7 @@ Resources:
       EmailVerificationSubject: Your verification code
       MfaConfiguration: "ON"
       EnabledMfas:
-        - SMS_MFA
+        - SOFTWARE_TOKEN_MFA
       Policies:
         PasswordPolicy:
           MinimumLength: 8
