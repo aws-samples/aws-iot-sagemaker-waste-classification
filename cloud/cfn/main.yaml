@@ -112,7 +112,6 @@ Resources:
       TemplateURL: appsync.yaml
       Parameters:
         BucketName: !GetAtt IoTCertificateStack.Outputs.TrashBinS3BucketName
-        ArtefactsBucketName: !Ref ArtefactsBucketName
         SageMakerInferenceEndpointName: !Ref SageMakerInferenceEndpointName
       Tags:
         - Key: Project
