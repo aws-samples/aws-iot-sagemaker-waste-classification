@@ -30,17 +30,17 @@ This is a simple fun demo to let people interact through big push button and tri
 
 The key AWS services used in this architecture are:
 
-- [Amazon SageMaker]("https://aws.amazon.com/sagemaker/") is used for hosting the clip model for zero shot image clasification.
-- [Amazon Rekognition]("https://aws.amazon.com/rekognition/") is used to identify the contents in the image.
-- [AWS IoT Greengrasss ]("https://aws.amazon.com/greengrass/") is used to build intelligent IoT device. In this case we use a Raspberry Pi device at the edge.
-- [AWS Step functions]("https://aws.amazon.com/step-functions/") is used to orchistrate the computer vision workflow once image is uploaded to Amazon S3 bucket.
-- [Amazon S3]("https://aws.amazon.com/s3/") is object storage built to retrieve any amount of data from anywhere. We use S3 to store the waste images and trigger the step function workflow. These images can also be used in the future for evaluation and fine-tuning of the models.
-- [AWS Iot SDK]("https://docs.aws.amazon.com/iot/latest/developerguide/iot-sdks.html") is to help you build innovative IoT solutions with AWS IoT and your choice of hardware platforms.
-- [Amazon DynamoDB]("https://aws.amazon.com/dynamodb/") is a serverless, NoSQL, fully managed database service. We use this to store waste classification result.
-- [Amazon Cognito]("https://aws.amazon.com/cognito/") is a CIAM service that scales to million of users. We use this to secure portal dashboard access.
-- [AWS Identity and Access Management]("https://aws.amazon.com/iam/") allows you to securely manage identities and access to AWS services and resources.
-- [AWS Amplify Hosting]("https://aws.amazon.com/amplify/hosting/") is a fully managed CI/CD and hosting service for reliable static and server-side rendered apps. We use this to host dashboard app.
-- [Cloudscape Design System]("https://cloudscape.design/) is an open source solution for building intuitive web applications. We use this to build dashboard app.
+- [Amazon SageMaker](https://aws.amazon.com/sagemaker/) is used for hosting the clip model for zero shot image clasification.
+- [Amazon Rekognition](https://aws.amazon.com/rekognition/) is used to identify the contents in the image.
+- [AWS IoT Greengrasss ](https://aws.amazon.com/greengrass/) is used to build intelligent IoT device. In this case we use a Raspberry Pi device at the edge.
+- [AWS Step functions](https://aws.amazon.com/step-functions/) is used to orchistrate the computer vision workflow once image is uploaded to Amazon S3 bucket.
+- [Amazon S3](https://aws.amazon.com/s3/) is object storage built to retrieve any amount of data from anywhere. We use S3 to store the waste images and trigger the step function workflow. These images can also be used in the future for evaluation and fine-tuning of the models.
+- [AWS Iot SDK](https://docs.aws.amazon.com/iot/latest/developerguide/iot-sdks.html) is to help you build innovative IoT solutions with AWS IoT and your choice of hardware platforms.
+- [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) is a serverless, NoSQL, fully managed database service. We use this to store waste classification result.
+- [Amazon Cognito](https://aws.amazon.com/cognito/) is a CIAM service that scales to million of users. We use this to secure portal dashboard access.
+- [AWS Identity and Access Management](https://aws.amazon.com/iam/) allows you to securely manage identities and access to AWS services and resources.
+- [AWS Amplify Hosting](https://aws.amazon.com/amplify/hosting/) is a fully managed CI/CD and hosting service for reliable static and server-side rendered apps. We use this to host dashboard app.
+- [Cloudscape Design System](https://cloudscape.design/) is an open source solution for building intuitive web applications. We use this to build dashboard app.
 
 <!-- <p align="center">
   <img src="docs/smart-wastebin-iot-architecture.png" alt="AWS Architecture Diagram" />
@@ -53,11 +53,11 @@ The key AWS services used in this architecture are:
     git clone https://github.com/aws-samples/aws-iot-aiml-waste-classification
     cd aws-iot-aiml-waste-classification
     ```
-2. [Complete pre-requisites for AWS ClI]("https://docs.aws.amazon.com/cli/latest/userguide/getting-started-prereqs.html")
-3. [Complete pre-requisites for AWS SAM ClI]("https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/prerequisites.html")
-4. [Install aws cli by following AWS documentation]("https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html")
-5. [Install aws sam cli by following AWS documentation]("https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html")
-6. [Download LCD1602 RGB Module for Raspberry Pi](waveshare.com/wiki/LCD1602_RGB_Module)
+2. [Complete pre-requisites for AWS ClI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-prereqs.html)
+3. [Complete pre-requisites for AWS SAM ClI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/prerequisites.html)
+4. [Install aws cli by following AWS documentation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+5. [Install aws sam cli by following AWS documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
+6. [Download LCD1602 RGB Module for Raspberry Pi](https://waveshare.com/wiki/LCD1602_RGB_Module)
     ```bash
     curl https://files.waveshare.com/upload/5/5b/LCD1602-RGB-Module-demo.zip --output LCD1602-RGB-Module-demo.zip
     unzip LCD1602-RGB-Module-demo.zip
@@ -66,7 +66,7 @@ The key AWS services used in this architecture are:
 
 
 ### Deploy CLIP model
-1. Login to your AWS account and create SageMaker notebook instance by [following instruction]("https://docs.aws.amazon.com/sagemaker/latest/dg/gs-setup-working-env.html")
+1. Login to your AWS account and create SageMaker notebook instance by [following instruction](https://docs.aws.amazon.com/sagemaker/latest/dg/gs-setup-working-env.html)
 2. Once notebook instance is setup, open Jupyter Lab by selecting the link on Notebook instance console.
 3. Upload jupyter-notebook/img-classifier.ipynb file
 4. Run each cell in sequence to deploy the CLIP model from huggingface.
