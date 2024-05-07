@@ -81,16 +81,18 @@ The key AWS services used in this architecture are:
 aws s3 cp ./cloud/pi s3://<use bucket created on step 1>/greengrass-app-components --recursive
 ```
 2. Deploy cloud infrastructure
+
+The Cognito user pool has MFA turned on as recommended security best practice. However you can decide to turn off in cloud/cfn/auth.yaml if not required.
+
 ```bash
 sam deploy \
          --stack-name <Stack Name> \
          --template-file cloud/cfn/main.yaml \
          --region <AWS Region> \
-         --no-execute-changeset \
          --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
-         --s3-bucket <S3 Bucket Name> \
+         --s3-bucket <S3 Bucket Name created on step 1> \
          --parameter-overrides \
-           ArtefactsBucketName=<S3 Bucket Name>  BucketName=<S3 Bucket Name> SageMakerInferenceEndpointName=<Model inference endpoint name>
+           ArtefactsBucketName=<S3 Bucket Name created on step 1> SageMakerInferenceEndpointName=<Model inference endpoint name>
 
 Note down below values from above deployment for ui deployment configuration
     "aws_appsync_graphqlEndpoint",
