@@ -179,9 +179,6 @@ sudo cd /v2/greengrass/logs
 tail -100f greegrass.logs
 ```
 
-# Local Development
-See the [Local Development](docs/LOCAL_DEVELOPMENT.md) guide to get a copy of the project up and running on your local machine for development and testing purposes.
-
 # Clean up
 
 To avoid incurring future charges, please clean up the resources created.
