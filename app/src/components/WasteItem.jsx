@@ -4,7 +4,8 @@
  */
 
 import { useState, useEffect } from "react";
-import { API, graphqlOperation, Storage } from 'aws-amplify';
+import { generateClient } from 'aws-amplify/api';
+import { getUrl } from 'aws-amplify/storage';
 import { onCreateWasteItem, onUpdateWasteItem } from '../graphql/subscriptions';
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
@@ -12,6 +13,8 @@ import ColumnLayout from "@cloudscape-design/components/column-layout";
 import Box from "@cloudscape-design/components/box";
 import Table from "@cloudscape-design/components/table";
 import Spinner from "@cloudscape-design/components/spinner";
+
+const client = generateClient();
 
 const WasteItem = () => {
   const [wasteItem, setWasteItem] = useState({
@@ -23,17 +26,17 @@ const WasteItem = () => {
   const [imageUrl, setImageUrl] = useState();
 
   useEffect(() => {
-    const createSubscriber = API.graphql(graphqlOperation(onCreateWasteItem)).subscribe({
-      next: (data) => {
-        const item = data.value.data.onCreateWasteItem;
+    const createSubscriber = client.graphql({ query: onCreateWasteItem }).subscribe({
+      next: ({ data }) => {
+        const item = data.onCreateWasteItem;
         setWasteItem(item);
         fetchImage(item.filePath);
       }
     });
 
-    const updateSubscriber = API.graphql(graphqlOperation(onUpdateWasteItem)).subscribe({
-      next: (data) => {
-        const item = data.value.data.onUpdateWasteItem;
+    const updateSubscriber = client.graphql({ query: onUpdateWasteItem }).subscribe({
+      next: ({ data }) => {
+        const item = data.onUpdateWasteItem;
         if (item.id === wasteItem.id) {
           setWasteItem({ ...item, labels: item.labels.map(l => JSON.parse(l)) });
         }
@@ -48,9 +51,9 @@ const WasteItem = () => {
 
   const fetchImage = async (filePath) => {
     try {
-      const fileAccessURL = await Storage.get(filePath, { expires: 60 });
-      console.log(fileAccessURL);
-      setImageUrl(fileAccessURL);
+      const { url } = await getUrl({ path: filePath, options: { expiresIn: 60 } });
+      console.log(url);
+      setImageUrl(url.toString());
     } catch (err) { console.log(err) }
   }
 

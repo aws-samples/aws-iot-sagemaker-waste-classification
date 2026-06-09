@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { API, graphqlOperation } from 'aws-amplify';
+import { generateClient } from 'aws-amplify/api';
 import { listWasteMass } from '../graphql/queries';
 import { onCreateWasteMass, onUpdateWasteMass, onDeleteWasteMass } from '../graphql/subscriptions';
 import BarChart from "@cloudscape-design/components/bar-chart";
@@ -19,6 +19,8 @@ const colourMappings = {
   recycle: "green"
 }
 
+const client = generateClient();
+
 const WasteMass = () => {
   const [wasteMass, setWasteMass] = useState([]);
 
@@ -27,15 +29,15 @@ const WasteMass = () => {
   }, [])
 
   useEffect(() => {
-    const createSubscriber = API.graphql(graphqlOperation(onCreateWasteMass)).subscribe({
+    const createSubscriber = client.graphql({ query: onCreateWasteMass }).subscribe({
       next: () => { fetchMasses(); }
     });
 
-    const updateSubscriber = API.graphql(graphqlOperation(onUpdateWasteMass)).subscribe({
+    const updateSubscriber = client.graphql({ query: onUpdateWasteMass }).subscribe({
       next: () => { fetchMasses(); }
     });
 
-    const deleteSubscriber = API.graphql(graphqlOperation(onDeleteWasteMass)).subscribe({
+    const deleteSubscriber = client.graphql({ query: onDeleteWasteMass }).subscribe({
       next: () => { fetchMasses(); }
     });
 
@@ -48,7 +50,7 @@ const WasteMass = () => {
 
   const fetchMasses = async () => {
     try {
-      const massData = await API.graphql(graphqlOperation(listWasteMass))
+      const massData = await client.graphql({ query: listWasteMass })
       const masses = massData.data.listWasteMass.items
       setWasteMass(masses);
     } catch (err) {
