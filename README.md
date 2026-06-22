@@ -57,7 +57,8 @@ The key AWS services used in this architecture are:
 3. [Complete pre-requisites for AWS SAM ClI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/prerequisites.html)
 4. [Install aws cli by following AWS documentation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 5. [Install aws sam cli by following AWS documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
-6. [Download LCD1602 RGB Module for Raspberry Pi](https://waveshare.com/wiki/LCD1602_RGB_Module)
+6. [Install Node.js](https://nodejs.org/) version 18 or later (required for the frontend app)
+7. [Download LCD1602 RGB Module for Raspberry Pi](https://waveshare.com/wiki/LCD1602_RGB_Module)
     ```bash
     curl https://files.waveshare.com/upload/5/5b/LCD1602-RGB-Module-demo.zip --output LCD1602-RGB-Module-demo.zip
     unzip LCD1602-RGB-Module-demo.zip

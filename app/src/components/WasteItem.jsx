@@ -51,7 +51,7 @@ const WasteItem = () => {
 
   const fetchImage = async (filePath) => {
     try {
-      const { url } = await getUrl({ path: filePath, options: { expiresIn: 60 } });
+      const { url } = await getUrl({ key: filePath, options: { expiresIn: 60 } });
       console.log(url);
       setImageUrl(url.toString());
     } catch (err) { console.log(err) }
